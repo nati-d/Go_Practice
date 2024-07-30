@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 )
 
 func palindromChecker() {
 	fmt.Print("Enter a word: ")
-	var reader = bufio.NewReader(os.Stdin)
-	word, _ := reader.ReadString('\n')
+	var word = acceptInput()
 
 	
 

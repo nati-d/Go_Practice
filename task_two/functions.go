@@ -1,8 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"os"
 	"strings"
 )
+
+func acceptInput() string{
+	reader := bufio.NewReader(os.Stdin)
+	word, _ := reader.ReadString('\n')
+
+	return word
+}
 
 func removePunctuation(word string) string {
 	var result string

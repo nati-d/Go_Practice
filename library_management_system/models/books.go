@@ -1,9 +1,8 @@
-package main
+package models
 
-
-type Books struct {
-	BookID int `json:"book_id"`
-	BookTitle string `json:"book_name"`
-	BookAuthor string `json:"book_author"`
-	BookStatus string `json:"book_status"`
+type Book struct {
+    ID     int     `json:"id"`
+    Title  string `json:"title"`
+    Author string `json:"author"`
+    Status string  `json:"status"`
 }

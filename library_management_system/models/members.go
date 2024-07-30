@@ -1,7 +1,7 @@
-package main
+package models
 
-type Member struct{
-	MemberID int `json:"member_id"`
-	MemberName string `json:"member_name"`
-	BorrowedBooks []Books `json:"borrowed_books"`
+type Member struct {
+    ID            int
+    Name          string
+    BorrowedBooks map[int]Book
 }

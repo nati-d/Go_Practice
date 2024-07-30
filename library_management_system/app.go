@@ -1,6 +1,8 @@
 package main
 
+import "library_management/controllers"
 
-func main () {
-	
+func main() {
+	controller := controllers.NewLibraryController()
+	controller.Run()
 }

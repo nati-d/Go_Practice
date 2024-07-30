@@ -37,27 +37,7 @@ The Library Management System is a console-based application built with Go. It p
 
 Once the application is running, you will see a menu with various options. Enter the corresponding number for the action you want to perform and follow the prompts.
 
-## Directory Structure
 
-The directory structure of the project is as follows:
-
-library_management_system/
-├── controllers/
-│   └── library_controller.go
-├── models/
-│   ├── book.go
-│   └── member.go
-├── services/
-│   └── library_service.go
-├── main.go
-├── README.md
-```
-
-- `controllers/`: Contains the main logic for user interaction.
-- `models/`: Contains the data models for books and members.
-- `services/`: Contains the business logic for managing the library.
-- `main.go`: Entry point of the application.
-- `README.md`: Documentation file.
 
 ## Functionality
 
@@ -115,15 +95,3 @@ The application includes validations and handles edge cases to ensure data integ
 - Ensures books can only be borrowed if they are available.
 - Ensures books can only be returned if they are currently borrowed.
 - Ensures Member IDs exist before performing member-related operations.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-Feel free to customize this README file further according to your needs!

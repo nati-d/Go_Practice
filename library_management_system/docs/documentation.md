@@ -6,7 +6,7 @@
 
 The Library Management System is a console-based application built with Go. It provides functionalities to manage books and members in a library. Users can add, delete, borrow, return, and search for books, as well as manage member information.
 
-![Library Management System](assets/library_management.png)
+
 
 ## Features
 

@@ -17,6 +17,16 @@ func main() {
 	fmt.Print("Please enter your name: ")
 	name := strings.TrimSpace(acceptInput())
 
+	for {
+		if validateInput(name) {
+			break
+		} else {
+			fmt.Println("Invalid name! Please enter a valid name.")
+			fmt.Print("Please enter your name: ")
+			name = strings.TrimSpace(acceptInput())
+		}
+	}
+
 	var numberOfSubjects int
 	for {
 		fmt.Print("How many subjects do you have, ", name, "? ")
@@ -35,6 +45,16 @@ func main() {
 
 		fmt.Printf("Enter the name of subject %d: ", i+1)
 		fmt.Scanf("%s", &subject)
+		for {
+
+			if validateInput(subject) {
+				break
+			} else {
+				fmt.Println("Invalid subject name! Please enter a valid subject name.")
+				fmt.Printf("Enter the name of subject %d: ", i+1)
+				fmt.Scanf("%s", &subject)
+			}
+		}
 
 		for {
 			fmt.Printf("Enter your marks for %s (0-100): ", subject)
@@ -90,4 +110,15 @@ func buildTable(dct map[string]float64, name string) {
 	}
 	tbl.AddRow("*", "Average", average)
 	tbl.Print()
+}
+
+func validateInput(str string) bool {
+
+	for _, char := range str {
+		if char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' {
+			return true
+		}
+
+	}
+	return false
 }

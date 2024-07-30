@@ -181,13 +181,20 @@ func (lc *LibraryController) BorrowBook() {
 				bookIdInput := acceptInput()
 				valid, bookId := validateIntegerInput(bookIdInput)
 				if valid {
-					err := lc.service.BorrowBook(bookId, memberId)
+					book, err := lc.service.SearchBookById(bookId)
 					if err != nil {
 						fmt.Println(err.Error())
+					} else if book.Status == "Borrowed" {
+						fmt.Println("Book is already borrowed. Please choose another book.")
 					} else {
-						fmt.Println("Book borrowed successfully!")
+						err = lc.service.BorrowBook(bookId, memberId)
+						if err != nil {
+							fmt.Println(err.Error())
+						} else {
+							fmt.Println("Book borrowed successfully!")
+						}
+						return
 					}
-					return
 				}
 			}
 		}
@@ -205,13 +212,20 @@ func (lc *LibraryController) ReturnBook() {
 				bookIdInput := acceptInput()
 				valid, bookId := validateIntegerInput(bookIdInput)
 				if valid {
-					err := lc.service.ReturnBook(bookId, memberId)
+					book, err := lc.service.SearchBookById(bookId)
 					if err != nil {
 						fmt.Println(err.Error())
+					} else if book.Status == "Available" {
+						fmt.Println("Book is already returned. Please enter a valid borrowed book ID.")
 					} else {
-						fmt.Println("Book returned successfully!")
+						err = lc.service.ReturnBook(bookId, memberId)
+						if err != nil {
+							fmt.Println(err.Error())
+						} else {
+							fmt.Println("Book returned successfully!")
+						}
+						return
 					}
-					return
 				}
 			}
 		}

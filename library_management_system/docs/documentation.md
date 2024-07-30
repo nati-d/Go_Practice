@@ -1,10 +1,12 @@
+
+
 # Library Management System
 
 ## Overview
 
 The Library Management System is a console-based application built with Go. It provides functionalities to manage books and members in a library. Users can add, delete, borrow, return, and search for books, as well as manage member information.
 
-
+![Library Management System](assets/library_management.png)
 
 ## Features
 
@@ -13,12 +15,75 @@ The Library Management System is a console-based application built with Go. It p
 - Search for books by title or ID.
 - Manage library members.
 
-
 ## Usage
 
 Once the application is running, you will see a menu with various options. Enter the corresponding number for the action you want to perform and follow the prompts.
 
+```
+============================================================
+         Welcome to the Library Management System!         
+============================================================
 
+1. Add new book
+2. Delete book
+3. Borrow book
+4. Return book
+5. List available books
+6. List borrowed books
+7. Search book by title
+8. Search book by id
+9. Add new member
+10. Delete member
+11. Exit
+Enter your choice: 
+```
+
+### Add New Book Example
+
+```
+Enter your choice: 1
+Enter book id: 1
+Enter book title: Java
+Enter book author: James Gosling
+Book added successfully!
+
+Press Enter to continue...
+```
+
+### Delete Book Example
+
+```
+Enter your choice: 2
+Enter book id: 1
+Book deleted successfully!
+
+Press Enter to continue...
+```
+
+### Borrow Book Example
+
+```
+Enter your choice: 3
+Enter member id: 3
+Enter book id: 1
+Book borrowed successfully!
+
+Press Enter to continue...
+```
+
+### List Available Books Example
+
+```
+Enter your choice: 5
+============================================================
+                      Available books:                      
+============================================================
+ID          Title                        Author                  Status             
+                                                                 
+2           Fundamentals of OOP          Henry Gothling          Available          
+
+Press Enter to continue...
+```
 
 ## Functionality
 
@@ -76,3 +141,4 @@ The application includes validations and handles edge cases to ensure data integ
 - Ensures books can only be borrowed if they are available.
 - Ensures books can only be returned if they are currently borrowed.
 - Ensures Member IDs exist before performing member-related operations.
+

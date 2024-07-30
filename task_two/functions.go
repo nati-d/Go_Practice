@@ -1,39 +1,8 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"os"
 	"strings"
 )
-
-func main() {
-	fmt.Println("What Do You Want To Do?")
-	fmt.Println("1. Count Words")
-	fmt.Println("2. Check Palindrome")
-	var choice int
-	fmt.Print("Enter Your Choice: ")
-	fmt.Scanln(&choice)
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter a word: ")
-	sentence, _ := reader.ReadString('\n')
-	sentence = trimWord(sentence)
-	sentence = toLowerCase(sentence)
-	sentence = removePunctuation(sentence)
-
-	if choice == 1{
-		wordCount := wordCounter(sentence)
-
-		fmt.Println("Word Count: ", wordCount)
-	}else if choice == 2{
-		if isPalindrome(sentence) {
-			fmt.Println("The word " ,sentence, " is a palindrome.")
-		} else {
-			fmt.Println("The word " ,sentence, " is not palindrome.")
-		}
-	}
-
-}
 
 func removePunctuation(word string) string {
 	var result string

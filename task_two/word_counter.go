@@ -4,12 +4,7 @@ import (
 	"fmt"
 )
 
-func wordCounterFunction() {
-	fmt.Print("Enter a sentence: ")
-	word := acceptInput()
-
-
-	
+func wordCounterFunction(word string) {
 
 	word = trimWord(word)
 	word = toLowerCase(word)

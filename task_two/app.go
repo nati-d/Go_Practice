@@ -40,11 +40,13 @@ func mainMenu() {
 	fmt.Print(boldMagenta("Enter Your Choice: "))
 	fmt.Scanln(&choice)
 
+	fmt.Print("Enter a word: ")
+	var word = acceptInput()
 	switch choice {
 	case 1:
-		wordCounterFunction()
+		wordCounterFunction(word)
 	case 2:
-		palindromChecker()
+		palindromChecker(word)
 	case 3:
 		fmt.Println(color.YellowString("Exiting the application..."))
 		os.Exit(0)

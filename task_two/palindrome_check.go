@@ -4,11 +4,7 @@ import (
 	"fmt"
 )
 
-func palindromChecker() {
-	fmt.Print("Enter a word: ")
-	var word = acceptInput()
-
-	
+func palindromChecker(word string) {
 
 	word = trimWord(word)
 	word = toLowerCase(word)

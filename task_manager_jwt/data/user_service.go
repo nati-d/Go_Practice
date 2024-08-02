@@ -91,7 +91,7 @@ func (us *UserService) Login(username, password string) (string, error) {
 	return user.Role, nil
 }
 
-//delete all users
+//delete all user
 func (us *UserService) DeleteAllUsers() error {
 	_, err := us.collection.DeleteMany(context.TODO(), bson.M{})
 	if err != nil {

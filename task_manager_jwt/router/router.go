@@ -13,12 +13,23 @@ func SetupRouter(client *mongo.Client) *gin.Engine {
 	r := gin.Default()
 
 	// Initialize the TaskService
-	service := data.NewTaskService(client.Database("taskdb").Collection("tasks"))
-
+	taskService := data.NewTaskService(client , "taskdb", "tasks")
 	// Initialize the TaskController with the TaskService
-	taskController := controllers.NewTaskController(service)
+	taskController := controllers.NewTaskController(taskService)
+
+	//Initialize User Service
+	userService := data.NewUserService(client, "taskdb", "users")
+
+	//Initialize User Controller
+	userController := controllers.NewUserController(userService)
+
+		
 
 	// Define the routes for task management
+
+	r.POST("/register", userController.Register)
+
+	// r.POST("/login", userController.Login)
 
 	// Route for adding a new task
 	r.POST("/tasks", taskController.AddTask)

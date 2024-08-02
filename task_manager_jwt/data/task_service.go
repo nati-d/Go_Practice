@@ -16,7 +16,8 @@ type TaskService struct {
 }
 
 // NewTaskService creates a new TaskService with the given MongoDB collection.
-func NewTaskService(collection *mongo.Collection) *TaskService {
+func NewTaskService(client *mongo.Client, dbName, collectionName string) *TaskService {
+	collection := client.Database(dbName).Collection(collectionName)
 	return &TaskService{collection: collection}
 }
 

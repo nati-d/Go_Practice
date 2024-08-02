@@ -10,18 +10,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-
 // TaskService provides CRUD operations for tasks.
 type TaskService struct {
 	collection *mongo.Collection
 }
 
-
 // NewTaskService creates a new TaskService with the given MongoDB collection.
 func NewTaskService(collection *mongo.Collection) *TaskService {
 	return &TaskService{collection: collection}
 }
-
 
 // AddTask adds a new task to the database.
 func (ts *TaskService) AddTask(task *models.Task) error {
@@ -47,7 +44,6 @@ func (ts *TaskService) AddTask(task *models.Task) error {
 	return nil
 }
 
-
 // GetAllTasks retrieves all tasks from the database.
 func (ts *TaskService) GetAllTasks() ([]models.Task, error) {
 	// Retrieve all tasks from the database
@@ -56,7 +52,6 @@ func (ts *TaskService) GetAllTasks() ([]models.Task, error) {
 		return nil, fmt.Errorf("failed to get tasks: %w", err)
 	}
 	defer result.Close(context.TODO())
-
 
 	// Decode the tasks into a slice
 	var tasks []models.Task
@@ -67,20 +62,18 @@ func (ts *TaskService) GetAllTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-
 // GetTaskById retrieves a task with the given ID from the database.
 func (ts *TaskService) GetTaskById(id primitive.ObjectID) (models.Task, error) {
 	var task models.Task
 	err := ts.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&task)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return models.Task{}, fmt.Errorf("no task found with the given ID")
+			return models.Task{}, fmt.Errorf("no task found with the given ID: %w", err)
 		}
 		return models.Task{}, fmt.Errorf("failed to get task: %w", err)
 	}
 	return task, nil
 }
-
 
 // UpdateFullTask updates a task with the given ID with the provided task data.
 func (ts *TaskService) UpdateFullTask(id primitive.ObjectID, task models.Task) error {
@@ -104,10 +97,9 @@ func (ts *TaskService) UpdateFullTask(id primitive.ObjectID, task models.Task) e
 		return fmt.Errorf("failed to update task: %w", err)
 	}
 
-
 	// Check if a task was found with the given ID
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("no task found with the given ID")
+		return fmt.Errorf("no task found with the given ID: %w", err)
 	}
 	return nil
 }
@@ -121,12 +113,10 @@ func (ts *TaskService) UpdateSomeTask(id primitive.ObjectID, update bson.M) erro
 
 	// Check if a task was found with the given ID
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("no task found with the given ID")
+		return fmt.Errorf("no task found with the given ID: %w", err)
 	}
 	return nil
 }
-
-
 
 // DeleteTask deletes a task with the given ID.
 func (ts *TaskService) DeleteTask(id primitive.ObjectID) error {
@@ -135,10 +125,9 @@ func (ts *TaskService) DeleteTask(id primitive.ObjectID) error {
 		return fmt.Errorf("failed to delete task: %w", err)
 	}
 
-
 	// Check if a task was found with the given ID
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("no task found with the given ID")
+		return fmt.Errorf("no task found with the given ID: %w", err)
 	}
 
 	return nil

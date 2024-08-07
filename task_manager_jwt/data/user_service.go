@@ -3,12 +3,10 @@ package data
 import (
 	"context"
 	"fmt"
-	"log"
 	"task_manager_jwt/models"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,88 +15,123 @@ type UserService struct {
 	collection *mongo.Collection
 }
 
-// NewUserService creates a new instance of UserService.
 func NewUserService(client *mongo.Client, dbName, collectionName string) *UserService {
 	collection := client.Database(dbName).Collection(collectionName)
-	return &UserService{collection}
+	return &UserService{collection: collection}
 }
 
-func (us *UserService) Register(user *models.User) error {
-	if user.Username == "" {
-		return fmt.Errorf("username cannot be empty")
-	}
-
-	if user.Password == "" {
-		return fmt.Errorf("password cannot be empty")
-	}
-
-	if user.Role == "" {
-		user.Role = "user"
-	}
-
-	count, err := us.collection.CountDocuments(context.TODO(), bson.M{"username": user.Username})
+// RegisterUser adds a new user to the database.
+func (us *UserService) RegisterUser(username, password, role string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return fmt.Errorf("failed to check if username exists: %w", err)
+		return err
 	}
 
-	if count > 0 {
-		return fmt.Errorf("username already exists")
-	}
+	id := primitive.NewObjectID()
+	user := models.User{ID: id,Username: username, Password: string(hashedPassword), Role: role}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	_, err = us.collection.InsertOne(context.TODO(), &user)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		return err
 	}
-
-	user.Password = string(hashedPassword)
-
-	_, err = us.collection.InsertOne(context.TODO(), user)
-	if err != nil {
-		return fmt.Errorf("failed to insert user: %w", err)
-	}
-
-	log.Println(user)
 	return nil
 }
 
-func (us *UserService) GetUser(username string) (*models.User, error) {
+// Login authenticates a user.
+func (us *UserService) Login(username, password string) (models.User, error) {
 	var user models.User
+
 	err := us.collection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return &user, nil
-}
-
-func (us *UserService) Login(username, password string) (string, error) {
-	user, err := us.GetUser(username)
-	if err != nil {
-		return "", fmt.Errorf("failed to get user: %w", err)
+		return models.User{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", fmt.Errorf("invalid password: %w", err)
+		return models.User{}, err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte("1234"))
-	if err != nil {
-		return "", fmt.Errorf("failed to generate token: %w", err)
-	}
-
-	return tokenString, nil
+	return user, nil
 }
 
-func (us *UserService) DeleteAllUsers() error {
-	_, err := us.collection.DeleteMany(context.TODO(), bson.M{})
+//get user by id
+func (us *UserService) GetUserById(id string) (models.User, error) {
+	var user models.User
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return fmt.Errorf("failed to delete users: %w", err)
+		return models.User{}, err
+	}
+	err = us.collection.FindOne(context.TODO(), bson.M{"_id": oid}).Decode(&user)
+	if err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
+// GetAllUsers returns all users from the database.
+func (us *UserService) GetAllUsers() ([]models.User, error) {
+	var users []models.User
+
+	cursor, err := us.collection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var user models.User
+		cursor.Decode(&user)
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// UpdateUser updates a user's profile.
+// UpdateUser updates a user's profile.
+func (us *UserService) UpdateUser(user *models.User) error {
+	filter := bson.M{"_id": user.ID}
+	update := bson.M{"$set": bson.M{}}
+
+	if user.Username != "" {
+		// Check if the given username is already in the database
+		existingUser := models.User{
+			ID:       [12]byte{},
+			Username: "",
+			Password: "",
+			Role:     "",
+		}
+		err := us.collection.FindOne(context.TODO(), bson.M{"username": user.Username}).Decode(&existingUser)
+		if err == nil {
+			return fmt.Errorf("username already exists")
+		}
+		update["$set"].(bson.M)["username"] = user.Username
+	}
+
+	if user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		update["$set"].(bson.M)["password"] = string(hashedPassword)
+	}
+
+	if user.Role != "" {
+		update["$set"].(bson.M)["role"] = user.Role
+	}
+
+	_, err := us.collection.UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
+// DeleteUser deletes a user from the database.
+func (us *UserService) DeleteUser(id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	_, err = us.collection.DeleteOne(context.TODO(), bson.M{"_id": oid})
+	if err != nil {
+		return err
 	}
 	return nil
 }

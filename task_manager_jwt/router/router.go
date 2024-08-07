@@ -3,52 +3,56 @@ package router
 import (
 	"task_manager_jwt/controllers"
 	"task_manager_jwt/data"
+	"task_manager_jwt/middleware"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-
+// SetupRouter initializes the Gin router with the given MongoDB client.
 func SetupRouter(client *mongo.Client) *gin.Engine {
 	r := gin.Default()
 
-	// Initialize the TaskService
-	taskService := data.NewTaskService(client , "taskdb", "tasks")
-	// Initialize the TaskController with the TaskService
-	taskController := controllers.NewTaskController(taskService)
-
-	//Initialize User Service
+	// Initialize the user service.
 	userService := data.NewUserService(client, "taskdb", "users")
-
-	//Initialize User Controller
 	userController := controllers.NewUserController(userService)
 
-		
+	// Initialize the task service.
+	taskService := data.NewTaskService(client, "taskdb", "tasks")
+	taskController := controllers.NewTaskController(taskService, userService)
 
-	// Define the routes for task management
+	// Register the user routes.
+	// Route for user registration
+	r.POST("/register", userController.RegisterUser)
+	// Route for user login
+	r.POST("/login", userController.Login)
+	// Route to get a list of all users (admin only)
+	r.GET("/users", userController.GetAllUsers)
+	// Route to get a list of all tasks (public access)
+	r.GET("/alltasks", taskController.GetAllTasks)
 
-	r.POST("/register", userController.Register)
+	// Register the task routes under authentication middleware.
+	// Group routes that require authentication
+	authorized := r.Group("/")
+	authorized.Use(middleware.AuthMiddleware())
+	{
+		// Route to update a user's details (requires admin role)
+		authorized.PATCH("/users/:id", userController.UpdateUser)
+		// Route to delete a user (requires admin role)
+		authorized.DELETE("/users/:id", userController.DeleteUser)
+		// Route to add a new task (requires authentication)
+		authorized.POST("/tasks", taskController.AddTask)
+		// Route to get tasks created by the logged-in user
+		authorized.GET("/tasks", taskController.GetMyTasks)
+		// Route to get a specific task by ID (requires authentication)
+		authorized.GET("/tasks/:id", taskController.GetTaskById)
+		// Route to update a task fully by ID (requires authentication)
+		authorized.PATCH("/tasks/:id", taskController.UpdateFullTask)
+		// Route to update a task partially by ID (requires authentication)
+		authorized.PUT("/tasks/:id", taskController.UpdateSomeTask)
+		// Route to delete a task by ID (requires authentication)
+		authorized.DELETE("/tasks/:id", taskController.DeleteTask)
+	}
 
-	// r.POST("/login", userController.Login)
-
-	// Route for adding a new task
-	r.POST("/tasks", taskController.AddTask)
-
-	// Route for getting all tasks
-	r.GET("/tasks", taskController.GetAllTasks)
-
-	// Route for getting a task by ID
-	r.GET("/tasks/:id", taskController.GetTaskById)
-
-	// Route for updating a task fully by ID
-	r.PUT("/tasks/:id", taskController.UpdateFullTask)
-
-	// Route for updating a task partially by ID
-	r.PATCH("/tasks/:id", taskController.UpdateSomeTask)
-
-	// Route for deleting a task by ID
-	r.DELETE("/tasks/:id", taskController.DeleteTask)
-
-	// Return the configured router
 	return r
 }

@@ -10,4 +10,5 @@ type Task struct {
 	Description string             `json:"description" bson:"description"`
 	DueDate     primitive.DateTime `json:"due_date" bson:"due_date"`
 	Status      string             `json:"status" bson:"status"`
+	CreatedBy   primitive.ObjectID `json:"created_by" bson:"created_by"`
 }

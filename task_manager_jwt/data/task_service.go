@@ -45,6 +45,25 @@ func (ts *TaskService) AddTask(task *models.Task) error {
 	return nil
 }
 
+//get my tasks
+func (ts *TaskService) GetMyTasks(userId string) ([]models.Task, error) {
+	// Retrieve all tasks from the database
+	dm,_ := primitive.ObjectIDFromHex(userId)
+	result, err := ts.collection.Find(context.TODO(), bson.M{"created_by": dm})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks: %w", err)
+	}
+	defer result.Close(context.TODO())
+
+	// Decode the tasks into a slice
+	var tasks []models.Task
+	err = result.All(context.TODO(), &tasks)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode tasks: %w", err)
+	}
+	return tasks, nil
+}
+
 // GetAllTasks retrieves all tasks from the database.
 func (ts *TaskService) GetAllTasks() ([]models.Task, error) {
 	// Retrieve all tasks from the database
@@ -91,6 +110,9 @@ func (ts *TaskService) UpdateFullTask(id primitive.ObjectID, task models.Task) e
 	if task.Status != "Not Started" && task.Status != "In Progress" && task.Status != "Completed" {
 		return fmt.Errorf("task status must be one of 'Not Started', 'In Progress', or 'Completed'")
 	}
+	//if the loggedin user in he can update others user but not admin and root user
+	
+
 
 	// Replace the task with the given ID with the provided task data
 	result, err := ts.collection.ReplaceOne(context.TODO(), bson.M{"_id": id}, task)

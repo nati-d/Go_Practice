@@ -29,35 +29,25 @@ func (uu *UserUsecase) Login(username, password string) (domain.User, error) {
 	return uu.userRepo.Login(username, password)
 }
 
-func (uu *UserUsecase) GetUserById(id string) (domain.User, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return domain.User{}, err
-	}
-	return uu.userRepo.GetUserById(oid)
+func (uu *UserUsecase) GetUserById(id primitive.ObjectID) (domain.User, error) {
+	
+	return uu.userRepo.GetUserById(id)
 }
 
-func (uu *UserUsecase) UpdateUser(id, username, password, role string) error {
-	oid, err := primitive.ObjectIDFromHex(id)
+func (uu *UserUsecase) UpdateUser(id primitive.ObjectID, user domain.User) error {
+	
+
+	hashedPassword,err := infrastructure.HashPassword(user.Password)
 	if err != nil {
 		return err
 	}
+	newUser := domain.User{ID: id, Username: user.Username, Password: string(hashedPassword), Role: user.Role}
 
-	hashedPassword,err := infrastructure.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	user := domain.User{ID: oid, Username: username, Password: string(hashedPassword), Role: role}
-
-	return uu.userRepo.UpdateUser(oid, user)
+	return uu.userRepo.UpdateUser(id, newUser)
 }
 
-func (uu *UserUsecase) DeleteUser(id string) error {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-	return uu.userRepo.DeleteUser(oid)
+func (uu *UserUsecase) DeleteUser(id primitive.ObjectID) error {
+	return uu.userRepo.DeleteUser(id)
 }
 
 func (uu *UserUsecase) GetAllUsers() ([]domain.User, error) {

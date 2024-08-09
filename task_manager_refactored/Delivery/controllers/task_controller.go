@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	usecase "task_manager_refactored/Usecase"
 	"task_manager_refactored/domain"
 
 	"github.com/gin-gonic/gin"
@@ -12,12 +11,12 @@ import (
 
 // TaskController handles HTTP requests for task operations
 type TaskController struct {
-	TaskUsecase *usecase.TaskUsecase
-	UserUsecase *usecase.UserUsecase
+	TaskUsecase domain.TaskUsecase
+	UserUsecase domain.UserUsecase
 }
 
 // NewTaskController creates a new TaskController
-func NewTaskController(taskUsecase *usecase.TaskUsecase, userUsecase *usecase.UserUsecase) *TaskController {
+func NewTaskController(taskUsecase domain.TaskUsecase, userUsecase domain.UserUsecase) *TaskController {
 	return &TaskController{
 		TaskUsecase: taskUsecase,
 		UserUsecase: userUsecase,
@@ -68,8 +67,8 @@ func (tc *TaskController) GetMyTasks(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims. Please try again."})
 		return
 	}
-
-	tasks, err := tc.TaskUsecase.GetMyTasks(userClaims.UserID)
+	userId,_ := primitive.ObjectIDFromHex(userClaims.UserID)
+	tasks, err := tc.TaskUsecase.GetMyTasks(userId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to retrieve your tasks. Please try again later: " + err.Error()})
 		return
@@ -122,7 +121,7 @@ func (tc *TaskController) UpdateFullTask(c *gin.Context) {
 		return
 	}
 
-	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy.Hex())
+	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy)
 
 	// Authorization checks
 	if userClaims.Role == "user" && userClaims.UserID != task.CreatedBy.Hex() {
@@ -165,7 +164,7 @@ func (tc *TaskController) UpdateSomeTask(c *gin.Context) {
 		return
 	}
 
-	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy.Hex())
+	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy)
 
 	// Authorization checks
 	if userClaims.Role == "user" && userClaims.UserID != task.CreatedBy.Hex() {
@@ -213,7 +212,7 @@ func (tc *TaskController) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy.Hex())
+	otherUser, _ := tc.UserUsecase.GetUserById(task.CreatedBy)
 
 	// Authorization checks
 	if userClaims.Role == "user" && userClaims.UserID != task.CreatedBy.Hex() {

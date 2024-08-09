@@ -81,7 +81,9 @@ func (uc *UserController) GetAllUsers(c *gin.Context) {
 // GetUserById returns a user by ID.
 func (uc *UserController) GetUserById(c *gin.Context) {
 	paramId := c.Param("id")
-	user, err := uc.UserUsecase.GetUserById(paramId)
+	newParamId, _ := primitive.ObjectIDFromHex(paramId)
+
+	user, err := uc.UserUsecase.GetUserById(newParamId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User with the given ID not found"})
 		return
@@ -99,8 +101,8 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request. Please provide valid user data"})
 		return
 	}
-
-	otherUser, err := uc.UserUsecase.GetUserById(paramId)
+	newParamId, _ := primitive.ObjectIDFromHex(paramId)
+	otherUser, err := uc.UserUsecase.GetUserById(newParamId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User with the given ID not found"})
 		return
@@ -128,7 +130,8 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		user.Password = ""
 	}
 
-	if err := uc.UserUsecase.UpdateUser(paramId,user.Username,user.Password,user.Role); err != nil {
+
+	if err := uc.UserUsecase.UpdateUser(newParamId,user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user. Please try again later"})
 		return
 	}
@@ -141,9 +144,10 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 	paramId := c.Param("id")
 	claims, _ := c.Get("user")
 	userClaims := claims.(*domain.Claims)
+	newParamId, _ := primitive.ObjectIDFromHex(paramId)
 
 	// Retrieve the user to be deleted
-	otherUser, err := uc.UserUsecase.GetUserById(paramId)
+	otherUser, err := uc.UserUsecase.GetUserById(newParamId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User with the given ID not found"})
 		return
@@ -166,7 +170,7 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 	}
 
 	// Perform the delete operation
-	if err := uc.UserUsecase.DeleteUser(paramId); err != nil {
+	if err := uc.UserUsecase.DeleteUser(newParamId); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user. Please try again later"})
 		return
 	}

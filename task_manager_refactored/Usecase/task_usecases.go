@@ -38,9 +38,8 @@ func (tu *TaskUsecase) GetAllTasks() ([]domain.Task, error) {
 	return tu.TaskRepository.GetAllTasks()
 }
 
-func (tu *TaskUsecase) GetMyTasks(userId string) ([]domain.Task, error) {
-	newUserId,_ := primitive.ObjectIDFromHex(userId)
-	return tu.TaskRepository.GetMyTasks(newUserId)
+func (tu *TaskUsecase) GetMyTasks(userId primitive.ObjectID) ([]domain.Task, error) {
+	return tu.TaskRepository.GetMyTasks(userId)
 }
 
 func (tu *TaskUsecase) GetTaskById(id primitive.ObjectID) (domain.Task, error) {

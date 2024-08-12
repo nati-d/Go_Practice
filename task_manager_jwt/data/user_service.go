@@ -135,3 +135,19 @@ func (us *UserService) DeleteUser(id string) error {
 	}
 	return nil
 }
+
+func (ts *UserService) PromoteUser(id primitive.ObjectID) error {
+	result, err := ts.collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"role": "admin"}})
+	if err != nil {
+		return fmt.Errorf("failed to promote user: %w", err)
+	}
+
+	// Check if a task was found with the given ID
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("no user found with the given ID: %w", err)
+	}
+	return nil
+}
+
+
+

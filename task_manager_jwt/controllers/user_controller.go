@@ -173,3 +173,41 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User with ID " + paramId + " has been successfully deleted"})
 }
+
+
+func(uc *UserController) PromoteUser(c *gin.Context) {
+	paramId := c.Param("id")
+	claims, _ := c.Get("user")
+	userClaims := claims.(*models.Claims)
+
+	// Retrieve the user to be promoted
+	otherUser, err := uc.service.GetUserById(paramId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User with the given ID not found"})
+		return
+	}
+
+	// Check if user is allowed to promote the profile
+	if userClaims.Role == "user" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to promote users"})
+		return
+	}
+	// Admin cannot promote other admins or root
+	if userClaims.Role == "admin" && (otherUser.Role == "admin" || otherUser.Role == "root") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admins cannot promote other admins or root"})
+		return
+	}
+	// Root user cannot promote other root user
+	if userClaims.Role == "root" && otherUser.Role == "root" && userClaims.UserID != paramId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Root user cannot promote other root user"})
+		return
+	}
+	changedParamId, _ := primitive.ObjectIDFromHex(paramId)
+	// Perform the promote operation
+	if err := uc.service.PromoteUser(changedParamId); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to promote user. Please try again later"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User with ID " + paramId + " has been successfully promoted"})
+}

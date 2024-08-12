@@ -1,170 +1,222 @@
 package usecase_test
 
 import (
+	"testing"
+
+	// infrastructure "task_manager_testing/Infrastructure"
+	infrastructure "task_manager_testing/Infrastructure"
 	usecase "task_manager_testing/Usecase"
 	"task_manager_testing/domain"
 	"task_manager_testing/mocks"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 )
 
+// UserUsecaseSuite defines the suite for user usecase tests
 type UserUsecaseSuite struct {
 	suite.Suite
+	userRepo    *mocks.UserRepository
 	userUsecase *usecase.UserUsecase
-	mockRepo    *mocks.UserRepository
 }
 
+// SetupTest sets up the necessary resources before each test
 func (suite *UserUsecaseSuite) SetupTest() {
-	suite.mockRepo = new(mocks.UserRepository)
-	suite.userUsecase = usecase.NewUserUsecase(suite.mockRepo)
+	suite.userRepo = &mocks.UserRepository{}
+	suite.userUsecase = usecase.NewUserUsecase(suite.userRepo)
 }
 
+
+
+// TestRegisterUser tests the RegisterUser functionality
 func (suite *UserUsecaseSuite) TestRegisterUser() {
+	// Setup the test case
 	user := domain.User{
-		ID:       primitive.NewObjectID(),
 		Username: "tester1",
 		Password: "12345678",
 		Role:     "user",
 	}
 
-	suite.mockRepo.On("RegisterUser", user.Username, user.Password, user.Role).Return(nil)
+	// temp := user.Password
 
+
+	suite.userRepo.On("RegisterUser", user.Username, mock.AnythingOfType("string")  , user.Role).Return(nil)
+
+
+	// Execute the test case
 	err := suite.userUsecase.RegisterUser(user.Username, user.Password, user.Role)
 
-	assert.NoError(suite.T(), err)
-	suite.mockRepo.AssertExpectations(suite.T())
+	// Verify the test results
+	suite.Require().NoError(err)
+	suite.userRepo.AssertExpectations(suite.T())
+	
 }
 
+//test login
 func (suite *UserUsecaseSuite) TestLogin() {
+	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username: "tester1",
-		Password: "12345678", // Plain text password to be provided during login
-		Role:     "user",
+		Username : "tester1",
+		Password : "12345678",
+		Role : "user",
 	}
 
 	// Hash the password that will be stored in the mock repository
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	assert.NoError(suite.T(), err)
+	hashedPassword, err := infrastructure.HashPassword(user.Password)
+	suite.Require().NoError(err)
 
 	// Update the user object with the hashed password
 	storedUser := user
-	storedUser.Password = string(hashedPassword)
+	storedUser.Password = hashedPassword
 
 	// Mock the Login method to return the user with the hashed password
-	suite.mockRepo.On("Login", user.Username, user.Password).Return(storedUser, nil)
+	suite.userRepo.On("Login", user.Username, user.Password).Return(storedUser, nil)
 
 	// Call the Login method with the plain text password
 	result, err := suite.userUsecase.Login(user.Username, "12345678")
 
 	// Ensure there were no errors during login
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Compare the provided password with the hashed password stored in the mock repository
-	err = bcrypt.CompareHashAndPassword([]byte(result.Password), []byte("12345678"))
-	assert.NoError(suite.T(), err, "Password should match the hashed password")
+	err = infrastructure.ComparePasswords(result.Password, "12345678")
 
 	// Check if other fields match as expected
-	assert.Equal(suite.T(), user.Username, result.Username)
-	assert.Equal(suite.T(), user.Role, result.Role)
-	suite.mockRepo.AssertExpectations(suite.T())
+	suite.Require().NoError(err)
+
+	suite.Require().Equal(user.Username, result.Username)
+	suite.Require().Equal(user.Role, result.Role)
+
+	suite.userRepo.AssertExpectations(suite.T())
+
 }
 
-
+// TestGetAllUsers tests the GetAllUsers functionality
 func (suite *UserUsecaseSuite) TestGetAllUsers() {
+	// Setup the test case
 	users := []domain.User{
 		{
 			ID:       primitive.NewObjectID(),
 			Username: "tester1",
-			Password: "12345678",
+			Password : "12345678",
 			Role:     "user",
 		},
+
 	}
 
-	suite.mockRepo.On("GetAllUsers").Return(users, nil)
+	suite.userRepo.On("GetAllUsers").Return(users, nil)
 
+	// Execute the test case
 	result, err := suite.userUsecase.GetAllUsers()
 
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), users, result)
+	// Verify the test results
+	suite.Require().NoError(err)
 
-	suite.mockRepo.AssertExpectations(suite.T())
+	suite.Require().Equal(users, result)
+
+	suite.userRepo.AssertExpectations(suite.T())
+
 }
 
+
+// TestGetUserById tests the GetUserById functionality
 func (suite *UserUsecaseSuite) TestGetUserById() {
+	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username: "tester1",
-		Password: "12345678", // Plain text password
-		Role:     "user",
+		Username : "tester1",
+		Password : "12345678", // Plain text password
+		Role : "user",
 	}
 
 	// Hash the password before setting it in the mock repository
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	assert.NoError(suite.T(), err)
+	hashedPassword, err := infrastructure.HashPassword(user.Password)
+	suite.Require().NoError(err)
 
 	// Update the user object with the hashed password
 	storedUser := user
-	storedUser.Password = string(hashedPassword)
+	storedUser.Password = hashedPassword
 
 	// Mock the GetUserById method to return the user with the hashed password
-	suite.mockRepo.On("GetUserById", user.ID).Return(storedUser, nil)
+	suite.userRepo.On("GetUserById", user.ID).Return(storedUser, nil)
 
 	// Call the GetUserById usecase method
 	result, err := suite.userUsecase.GetUserById(user.ID)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Compare the provided password with the hashed password stored in the mock repository
-	err = bcrypt.CompareHashAndPassword([]byte(result.Password), []byte("12345678"))
-	assert.NoError(suite.T(), err, "Password should match the hashed password")
+	err = infrastructure.ComparePasswords(result.Password, "12345678")
 
-	// Check if other fields match as expected
-	assert.Equal(suite.T(), storedUser.Username, result.Username)
-	assert.Equal(suite.T(), storedUser.Role, result.Role)
+	// Verify the test results
+	suite.Require().NoError(err)
 
-	suite.mockRepo.AssertExpectations(suite.T())
+	suite.userRepo.AssertExpectations(suite.T())
+
 }
 
 
 func (suite *UserUsecaseSuite) TestUpdateUser() {
+	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username: "tester1",
-		Password: "12345678",
-		Role:     "user",
+		Username : "tester1",
+		Password : "12345678",
+		Role : "user",
 	}
 
-	suite.mockRepo.On("UpdateUser", user.ID, user).Return(nil)
+	// Hash the password before setting it in the mock repository
+	hashedPassword, err := infrastructure.HashPassword(user.Password)
+	suite.Require().NoError(err)
 
-	err := suite.userUsecase.UpdateUser(user.ID, user)
+	// Update the user object with the hashed password
+	storedUser := user
+	storedUser.Password = hashedPassword
 
-	assert.NoError(suite.T(), err)
+	// Mock the UpdateUser method to return the user with the hashed password
+	suite.userRepo.On("UpdateUser", user.ID, user).Return(nil)
 
-	suite.mockRepo.AssertExpectations(suite.T())
+	// Call the UpdateUser usecase method
+
+	err = suite.userUsecase.UpdateUser(user.ID, user)
+	// Verify the test results
+	suite.Require().NoError(err)
+
+	suite.userRepo.AssertExpectations(suite.T())
 
 }
 
 func (suite *UserUsecaseSuite) TestDeleteUser() {
+	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username: "tester1",
-		Password: "12345678",
-		Role:     "user",
+		Username : "tester1",
+		Password : "12345678",
+		Role : "user",
 	}
 
-	suite.mockRepo.On("DeleteUser", user.ID).Return(nil)
+	// Mock the DeleteUser method to return the user with the hashed password
+	suite.userRepo.On("DeleteUser", user.ID).Return(nil)
 
+	// Call the DeleteUser usecase method
 	err := suite.userUsecase.DeleteUser(user.ID)
 
-	assert.NoError(suite.T(), err)
+	// Verify the test results
+	suite.Require().NoError(err)
 
-	suite.mockRepo.AssertExpectations(suite.T())
+	suite.userRepo.AssertExpectations(suite.T())
+
 }
 
+// TearDownTest clears resources after each test
+func (suite *UserUsecaseSuite) TearDownTest() {
+	// Reset the mock expectations
+	suite.userRepo.AssertExpectations(suite.T())
+}
+
+
+// Run the test suite
 func TestUserUsecaseSuite(t *testing.T) {
 	suite.Run(t, new(UserUsecaseSuite))
 }

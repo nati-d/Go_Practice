@@ -69,3 +69,9 @@ type UserUsecase interface {
 	DeleteUser(id primitive.ObjectID) error
 	GetAllUsers() ([]User, error)
 }
+
+type Response struct {
+	Success bool `json:"success"`
+	Message string `json:"message"`
+	Data interface{} `json:"data"`
+}

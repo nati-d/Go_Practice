@@ -1,159 +1,126 @@
 package usecase_test
 
 import (
+	"testing"
+
 	usecase "task_manager_testing/Usecase"
 	"task_manager_testing/domain"
 	"task_manager_testing/mocks"
-	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// TaskUsecaseSuite defines the suite for task usecase tests
 type TaskUsecaseSuite struct {
-    suite.Suite
-    taskUsecase *usecase.TaskUsecase
-    mockRepo    *mocks.TaskRepository
+	suite.Suite
+	taskRepo   *mocks.TaskRepository
+	taskUsecase *usecase.TaskUsecase
 }
-
+// SetupTest sets up the necessary resources before each test
 func (suite *TaskUsecaseSuite) SetupTest() {
-    suite.mockRepo = new(mocks.TaskRepository)
-    suite.taskUsecase = usecase.NewTaskUsecase(suite.mockRepo)
+	suite.taskRepo = &mocks.TaskRepository{}
+	suite.taskUsecase = usecase.NewTaskUsecase(suite.taskRepo)
 }
 
+// TearDownTest clears resources after each test
+func (suite *TaskUsecaseSuite) TearDownTest() {
+	// Reset the mock expectations
+	suite.taskRepo.AssertExpectations(suite.T())
+}
+
+// TestAddTask tests the AddTask use case
 func (suite *TaskUsecaseSuite) TestAddTask() {
-    task := domain.Task{
-        ID:          primitive.NewObjectID(),
-        Title:       "Test Task",
-        Description: "This is a test task",
-        DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-        Status:      "Completed",
-        CreatedBy:   primitive.NewObjectID(),
-    }
+	task := domain.Task{ID: primitive.NewObjectID(), Title: "Task 1", Description: "Description 1", Status: "Completed", CreatedBy: primitive.NewObjectID()}
 
-    suite.mockRepo.On("AddTask", task).Return(nil)
+	suite.taskRepo.On("AddTask", task).Return(nil)
 
-    err := suite.taskUsecase.AddTask(task)
+	err := suite.taskUsecase.AddTask(task)
 
-    assert.NoError(suite.T(), err)
-    suite.mockRepo.AssertExpectations(suite.T())
+	assert.Nil(suite.T(), err)
 }
 
-func (suite *TaskUsecaseSuite) TestGetTaskById() {
-    task := domain.Task{
-        ID:          primitive.NewObjectID(),
-        Title:       "Test Task",
-        Description: "This is a test task",
-        DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-        Status:      "Completed",
-        CreatedBy:   primitive.NewObjectID(),
-    }
-
-    suite.mockRepo.On("GetTaskById", task.ID).Return(task, nil)
-
-    result, err := suite.taskUsecase.GetTaskById(task.ID)
-
-    assert.NoError(suite.T(), err)
-    assert.Equal(suite.T(), task, result)
-    suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *TaskUsecaseSuite) TestGetAllTasks() {
-    tasks := []domain.Task{
-        {
-            ID:          primitive.NewObjectID(),
-            Title:       "Task 1",
-            Description: "This is task 1",
-            DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-            Status:      "Completed",
-            CreatedBy:   primitive.NewObjectID(),
-        },
-        {
-            ID:          primitive.NewObjectID(),
-            Title:       "Task 2",
-            Description: "This is task 2",
-            DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-            Status:      "Completed",
-            CreatedBy:   primitive.NewObjectID(),
-        },
-    }
-
-    suite.mockRepo.On("GetAllTasks").Return(tasks, nil)
-
-    result, err := suite.taskUsecase.GetAllTasks()
-
-    assert.NoError(suite.T(), err)
-    assert.Equal(suite.T(), tasks, result)
-    suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *TaskUsecaseSuite) TestGetMyTasks() {
-    userId := primitive.NewObjectID()
-    tasks := []domain.Task{
-        {
-            ID:          primitive.NewObjectID(),
-            Title:       "Task 1",
-            Description: "This is task 1",
-            DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-            Status:      "Completed",
-            CreatedBy:   userId,
-        },
-    }
-
-    suite.mockRepo.On("GetMyTasks", userId).Return(tasks, nil)
-
-    result, err := suite.taskUsecase.GetMyTasks(userId)
-
-    assert.NoError(suite.T(), err)
-    assert.Equal(suite.T(), tasks, result)
-    suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *TaskUsecaseSuite) TestUpdateFullTask() {
-    task := domain.Task{
-        ID:          primitive.NewObjectID(),
-        Title:       "Test Task",
-        Description: "This is a test task",
-        DueDate:     primitive.NewDateTimeFromTime(time.Now()),
-        Status:      "Completed",
-        CreatedBy:   primitive.NewObjectID(),
-    }
-
-    suite.mockRepo.On("UpdateFullTask", task.ID, task).Return(nil)
-
-    err := suite.taskUsecase.UpdateFullTask(task.ID, task)
-
-    assert.NoError(suite.T(), err)
-    suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *TaskUsecaseSuite) TestUpdateSomeTask() {
-    taskId := primitive.NewObjectID()
-    update := map[string]interface{}{
-        "status": "Completed",
-    }
-
-    suite.mockRepo.On("UpdateSomeTask", taskId, update).Return(nil)
-
-    err := suite.taskUsecase.UpdateSomeTask(taskId, update)
-
-    assert.NoError(suite.T(), err)
-    suite.mockRepo.AssertExpectations(suite.T())
-}
-
+// TestDeleteTask tests the DeleteTask use case
 func (suite *TaskUsecaseSuite) TestDeleteTask() {
-    taskId := primitive.NewObjectID()
+	id := primitive.NewObjectID()
 
-    suite.mockRepo.On("DeleteTask", taskId).Return(nil)
+	suite.taskRepo.On("DeleteTask", id).Return(nil)
 
-    err := suite.taskUsecase.DeleteTask(taskId)
+	err := suite.taskUsecase.DeleteTask(id)
 
-    assert.NoError(suite.T(), err)
-    suite.mockRepo.AssertExpectations(suite.T())
+	assert.Nil(suite.T(), err)
 }
 
+// TestGetAllTasks tests the GetAllTasks use case
+func (suite *TaskUsecaseSuite) TestGetAllTasks() {
+	tasks := []domain.Task{
+		{ID: primitive.NewObjectID(), Title: "Task 1", Description: "Description 1", Status: "Completed", CreatedBy: primitive.NewObjectID()},
+		{ID: primitive.NewObjectID(), Title: "Task 2", Description: "Description 2", Status: "Pending", CreatedBy: primitive.NewObjectID()},
+	}
+
+	suite.taskRepo.On("GetAllTasks").Return(tasks, nil)
+
+	result, err := suite.taskUsecase.GetAllTasks()
+
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), tasks, result)
+}
+
+// TestGetTaskById tests the GetTaskById use case
+func (suite *TaskUsecaseSuite) TestGetTaskById() {
+	id := primitive.NewObjectID()
+	task := domain.Task{ID: id, Title: "Task 1", Description: "Description 1", Status: "Completed", CreatedBy: primitive.NewObjectID()}
+
+	suite.taskRepo.On("GetTaskById", id).Return(task, nil)
+
+	result, err := suite.taskUsecase.GetTaskById(id)
+
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), task, result)
+}
+
+// TestUpdateFullTask tests the UpdateFullTask use case
+func (suite *TaskUsecaseSuite) TestUpdateFullTask() {
+	id := primitive.NewObjectID()
+	task := domain.Task{ID: id, Title: "Task 1", Description: "Description 1", Status: "Completed", CreatedBy: primitive.NewObjectID()}
+
+	suite.taskRepo.On("UpdateFullTask", id, task).Return(nil)
+
+	err := suite.taskUsecase.UpdateFullTask(id, task)
+
+	assert.Nil(suite.T(), err)
+}
+
+// TestUpdateSomeTask tests the UpdateSomeTask use case
+func (suite *TaskUsecaseSuite) TestUpdateSomeTask() {
+	id := primitive.NewObjectID()
+	task := map[string]interface{}{"status": "Completed"}
+
+	suite.taskRepo.On("UpdateSomeTask", id, task).Return(nil)
+
+	err := suite.taskUsecase.UpdateSomeTask(id, task)
+
+	assert.Nil(suite.T(), err)
+}
+
+// TestGetMyTasks tests the GetMyTasks use case
+func (suite *TaskUsecaseSuite) TestGetMyTasks() {
+	userId := primitive.NewObjectID()
+	tasks := []domain.Task{
+		{ID: primitive.NewObjectID(), Title: "Task 1", Description: "Description 1", Status: "Completed", CreatedBy: userId},
+		{ID: primitive.NewObjectID(), Title: "Task 2", Description: "Description 2", Status: "Pending", CreatedBy: userId},
+	}
+
+	suite.taskRepo.On("GetMyTasks", userId).Return(tasks, nil)
+
+	result, err := suite.taskUsecase.GetMyTasks(userId)
+
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), tasks, result)
+}
+
+// TestTaskUsecaseSuite is the entry point for running the suite tests
 func TestTaskUsecaseSuite(t *testing.T) {
-    suite.Run(t, new(TaskUsecaseSuite))
+	suite.Run(t, new(TaskUsecaseSuite))
 }

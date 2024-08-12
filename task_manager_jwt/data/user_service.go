@@ -27,8 +27,7 @@ func (us *UserService) RegisterUser(username, password string) error {
 		return err
 	}
 
-	id := primitive.NewObjectID()
-	user := models.User{ID: id,Username: username, Password: string(hashedPassword), Role: "user"}
+	user := models.User{Username: username, Password: string(hashedPassword), Role: "user"}
 
 	_, err = us.collection.InsertOne(context.TODO(), &user)
 	if err != nil {

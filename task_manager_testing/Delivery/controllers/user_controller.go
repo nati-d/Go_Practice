@@ -3,7 +3,6 @@ package controllers
 import (
 	"net/http"
 	infrastructure "task_manager_testing/Infrastructure"
-	usecase "task_manager_testing/Usecase"
 	"task_manager_testing/domain"
 
 	"github.com/gin-gonic/gin"
@@ -11,11 +10,11 @@ import (
 )
 
 type UserController struct {
-	UserUsecase *usecase.UserUsecase
+	UserUsecase domain.UserUsecase
 }
 
 // NewUserController creates a new user controller.
-func NewUserController(userusecase *usecase.UserUsecase) *UserController {
+func NewUserController(userusecase domain.UserUsecase) *UserController {
 	return &UserController{UserUsecase: userusecase}
 }
 

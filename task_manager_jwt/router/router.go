@@ -40,6 +40,10 @@ func SetupRouter(client *mongo.Client) *gin.Engine {
 		authorized.PATCH("/users/:id", userController.UpdateUser)
 		// Route to delete a user (requires admin role)
 		authorized.DELETE("/users/:id", userController.DeleteUser)
+		//Route to ptomote a user to admin
+		authorized.PATCH("/promote/:id", userController.PromoteUser)
+		//Route to get user by id
+		authorized.GET("/users/:id", userController.GetUserById)
 		// Route to add a new task (requires authentication)
 		authorized.POST("/tasks", taskController.AddTask)
 		// Route to get tasks created by the logged-in user

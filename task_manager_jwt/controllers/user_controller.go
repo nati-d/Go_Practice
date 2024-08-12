@@ -24,7 +24,6 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
-		Role     string `json:"role" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,7 +31,7 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	err := uc.service.RegisterUser(req.Username, req.Password, req.Role)
+	err := uc.service.RegisterUser(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed. Please try again later"})
 		return

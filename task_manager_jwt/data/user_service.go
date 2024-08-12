@@ -21,14 +21,14 @@ func NewUserService(client *mongo.Client, dbName, collectionName string) *UserSe
 }
 
 // RegisterUser adds a new user to the database.
-func (us *UserService) RegisterUser(username, password, role string) error {
+func (us *UserService) RegisterUser(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
 	id := primitive.NewObjectID()
-	user := models.User{ID: id,Username: username, Password: string(hashedPassword), Role: role}
+	user := models.User{ID: id,Username: username, Password: string(hashedPassword), Role: "user"}
 
 	_, err = us.collection.InsertOne(context.TODO(), &user)
 	if err != nil {

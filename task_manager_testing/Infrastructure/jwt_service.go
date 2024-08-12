@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"task_manager_refactored/domain"
+	"task_manager_testing/domain"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"

@@ -1,9 +1,9 @@
 package routers
 
 import (
-	"task_manager_refactored/Delivery/controllers"
-	repository "task_manager_refactored/Repository"
-	usecase "task_manager_refactored/Usecase"
+	"task_manager_testing/Delivery/controllers"
+	repository "task_manager_testing/Repository"
+	usecase "task_manager_testing/Usecase"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"

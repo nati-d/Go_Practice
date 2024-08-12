@@ -1,9 +1,9 @@
 package usecase_test
 
 import (
-	usecase "task_manager_refactored/Usecase"
-	"task_manager_refactored/domain"
-	"task_manager_refactored/mocks"
+	usecase "task_manager_testing/Usecase"
+	"task_manager_testing/domain"
+	"task_manager_testing/mocks"
 	"testing"
 	"time"
 

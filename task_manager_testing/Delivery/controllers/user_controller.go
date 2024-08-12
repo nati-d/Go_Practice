@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"net/http"
-	infrastructure "task_manager_refactored/Infrastructure"
-	usecase "task_manager_refactored/Usecase"
-	"task_manager_refactored/domain"
+	infrastructure "task_manager_testing/Infrastructure"
+	usecase "task_manager_testing/Usecase"
+	"task_manager_testing/domain"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"

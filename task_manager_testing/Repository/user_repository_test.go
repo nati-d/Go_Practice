@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"task_manager_refactored/Infrastructure/database"
-	repository "task_manager_refactored/Repository"
-	"task_manager_refactored/domain"
+	"task_manager_testing/Infrastructure/database"
+	repository "task_manager_testing/Repository"
+	"task_manager_testing/domain"
 
 	"github.com/stretchr/testify/suite"
 	"go.mongodb.org/mongo-driver/bson/primitive"

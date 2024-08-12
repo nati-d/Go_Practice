@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	domain "task_manager_refactored/domain"
+	domain "task_manager_testing/domain"
 
 	mock "github.com/stretchr/testify/mock"
 

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	"task_manager_refactored/Delivery/routers"
-	"task_manager_refactored/Infrastructure/database"
+	"task_manager_testing/Delivery/routers"
+	"task_manager_testing/Infrastructure/database"
 	"github.com/joho/godotenv"
 )
 

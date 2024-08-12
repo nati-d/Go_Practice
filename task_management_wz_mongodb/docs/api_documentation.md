@@ -5,7 +5,7 @@ This project is a task management API built using Go, providing endpoints to cre
 
 ## API Documentation
 
-For detailed API documentation, please refer to the [Postman Documentation](https://web.postman.co/documentation/23906890-a118b1f5-97b6-4d75-91b9-f7d43e40d5d3/publish?workspaceId=3be211d7-3e17-46c8-890d-273967f2f994).
+For detailed API documentation, please refer to the [Postman Documentation](https://documenter.getpostman.com/view/23906890/2sA3kd9ckj).
 
 This documentation includes:
 - **Endpoint URLs**: The paths for each API endpoint.

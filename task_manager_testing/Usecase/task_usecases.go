@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-//apply use cases for all epositories
+// apply use cases for all epositories
 type TaskUsecase struct {
 	TaskRepository domain.TaskRepository
 }
@@ -47,11 +47,25 @@ func (tu *TaskUsecase) GetTaskById(id primitive.ObjectID) (domain.Task, error) {
 }
 
 func (tu *TaskUsecase) UpdateFullTask(id primitive.ObjectID, task domain.Task) error {
-	return tu.TaskRepository.UpdateFullTask(id,task)
+	if task.Title == "" {
+		return fmt.Errorf("task title cannot be empty")
+	}
+	if task.Description == "" {
+		return fmt.Errorf("task description cannot be empty")
+	}
+	if task.Status == "" {
+		return fmt.Errorf("task status cannot be empty")
+	}
+
+	if task.Status != "Not Started" && task.Status != "In Progress" && task.Status != "Completed" {
+		return fmt.Errorf("task status must be one of 'Not Started', 'In Progress', or 'Completed'")
+	}
+
+	return tu.TaskRepository.UpdateFullTask(id, task)
 }
 
-func (tu *TaskUsecase) UpdateSomeTask(id primitive.ObjectID,task map[string]interface{}) error {
-	return tu.TaskRepository.UpdateSomeTask(id,task)
+func (tu *TaskUsecase) UpdateSomeTask(id primitive.ObjectID, task map[string]interface{}) error {
+	return tu.TaskRepository.UpdateSomeTask(id, task)
 }
 
 func (tu *TaskUsecase) DeleteTask(id primitive.ObjectID) error {

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"task_manager_testing/Delivery/routers"
-	"task_manager_testing/Infrastructure/database"
+	"task_manager_testing/config/database"
 	"github.com/joho/godotenv"
 )
 

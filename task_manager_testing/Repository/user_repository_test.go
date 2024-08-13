@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"task_manager_testing/Infrastructure/database"
+	"task_manager_testing/config/database"
 	repository "task_manager_testing/Repository"
 	"task_manager_testing/domain"
 

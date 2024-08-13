@@ -1,6 +1,8 @@
 package usecase_test
 
 import (
+	"fmt"
+	"log"
 	"testing"
 
 	// infrastructure "task_manager_testing/Infrastructure"
@@ -27,8 +29,6 @@ func (suite *UserUsecaseSuite) SetupTest() {
 	suite.userUsecase = usecase.NewUserUsecase(suite.userRepo)
 }
 
-
-
 // TestRegisterUser tests the RegisterUser functionality
 func (suite *UserUsecaseSuite) TestRegisterUser() {
 	// Setup the test case
@@ -38,11 +38,14 @@ func (suite *UserUsecaseSuite) TestRegisterUser() {
 		Role:     "user",
 	}
 
-	// temp := user.Password
+	suite.userRepo.On("RegisterUser", user.Username, mock.AnythingOfType("string"), user.Role).Return(nil).
+		Run(func(args mock.Arguments) {
+			password := args.Get(1).(string)
+			err := infrastructure.ComparePasswords(password, user.Password)
+			suite.NoError(err)
+			user.Password = password
 
-
-	suite.userRepo.On("RegisterUser", user.Username, mock.AnythingOfType("string")  , user.Role).Return(nil)
-
+		})
 
 	// Execute the test case
 	err := suite.userUsecase.RegisterUser(user.Username, user.Password, user.Role)
@@ -50,47 +53,78 @@ func (suite *UserUsecaseSuite) TestRegisterUser() {
 	// Verify the test results
 	suite.Require().NoError(err)
 	suite.userRepo.AssertExpectations(suite.T())
-	
+
 }
 
-//test login
+// test login
 func (suite *UserUsecaseSuite) TestLogin() {
-	// Setup the test case
-	user := domain.User{
-		ID:       primitive.NewObjectID(),
-		Username : "tester1",
-		Password : "12345678",
-		Role : "user",
+	testCases := []struct {
+		name          string
+		user          domain.User
+		inputPassword string
+		mockReturn    domain.User
+		mockError     error
+		expectedError bool
+	}{
+		{
+			name: "Valid login",
+			user: domain.User{
+				Username: "validUser",
+				Password: "ValidPassword123",
+				Role:     "user",
+			},
+			inputPassword: "ValidPassword123",
+			mockReturn: domain.User{
+				Username: "validUser",
+				Password: "", // We will set this later after hashing
+				Role:     "user",
+			},
+			mockError:     nil,
+			expectedError: false,
+		},
+		{
+			name: "Nonexistent user",
+			user: domain.User{
+				Username: "nonexistentUser",
+				Password: "password",
+				Role:     "user",
+			},
+			inputPassword: "password",
+			mockReturn:    domain.User{},
+			mockError:     fmt.Errorf("user not found"),
+			expectedError: true,
+		},
 	}
 
-	// Hash the password that will be stored in the mock repository
-	hashedPassword, err := infrastructure.HashPassword(user.Password)
-	suite.Require().NoError(err)
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			if tc.name != "Nonexistent user" {
+				// Hash the password for the mock return user if not "Nonexistent user"
+				hashedPassword, err := infrastructure.HashPassword(tc.user.Password)
+				suite.Require().NoError(err)
+				tc.mockReturn.Password = hashedPassword
+			}
 
-	// Update the user object with the hashed password
-	storedUser := user
-	storedUser.Password = hashedPassword
+			// Mock the Login method
+			suite.userRepo.On("Login", tc.user.Username, mock.AnythingOfType("string")).Return(tc.mockReturn, tc.mockError)
 
-	// Mock the Login method to return the user with the hashed password
-	suite.userRepo.On("Login", user.Username, user.Password).Return(storedUser, nil)
+			// Execute the test case
+			result, err := suite.userUsecase.Login(tc.user.Username, tc.inputPassword)
 
-	// Call the Login method with the plain text password
-	result, err := suite.userUsecase.Login(user.Username, "12345678")
+			// Verify the test results
+			if tc.expectedError {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+				suite.Equal(tc.user.Username, result.Username)
+				suite.Equal(tc.user.Role, result.Role)
+				err := infrastructure.ComparePasswords(result.Password, tc.inputPassword)
+				suite.NoError(err)
+			}
 
-	// Ensure there were no errors during login
-	suite.Require().NoError(err)
-
-	// Compare the provided password with the hashed password stored in the mock repository
-	err = infrastructure.ComparePasswords(result.Password, "12345678")
-
-	// Check if other fields match as expected
-	suite.Require().NoError(err)
-
-	suite.Require().Equal(user.Username, result.Username)
-	suite.Require().Equal(user.Role, result.Role)
-
-	suite.userRepo.AssertExpectations(suite.T())
-
+			suite.userRepo.AssertExpectations(suite.T())
+		})
+	}
 }
 
 // TestGetAllUsers tests the GetAllUsers functionality
@@ -100,10 +134,9 @@ func (suite *UserUsecaseSuite) TestGetAllUsers() {
 		{
 			ID:       primitive.NewObjectID(),
 			Username: "tester1",
-			Password : "12345678",
+			Password: "12345678",
 			Role:     "user",
 		},
-
 	}
 
 	suite.userRepo.On("GetAllUsers").Return(users, nil)
@@ -120,66 +153,114 @@ func (suite *UserUsecaseSuite) TestGetAllUsers() {
 
 }
 
-
 // TestGetUserById tests the GetUserById functionality
 func (suite *UserUsecaseSuite) TestGetUserById() {
-	// Setup the test case
-	user := domain.User{
-		ID:       primitive.NewObjectID(),
-		Username : "tester1",
-		Password : "12345678", // Plain text password
-		Role : "user",
+	testCases := []struct {
+		name          string
+		userID        primitive.ObjectID
+		storedUser    domain.User
+		mockError     error
+		expectedError bool
+		expectedUser  domain.User
+	}{
+		{
+			name:   "Valid User ID",
+			userID: primitive.NewObjectID(),
+			storedUser: domain.User{
+				ID:       primitive.NewObjectID(),
+				Username: "tester1",
+				Password: "", // We will hash it later
+				Role:     "user",
+			},
+			mockError:     nil,
+			expectedError: false,
+			expectedUser: domain.User{
+				ID:       primitive.NewObjectID(),
+				Username: "tester1",
+				Password: "12345678", // Plain text for comparison
+				Role:     "user",
+			},
+		},
+		{
+			name:          "Non-existent User ID",
+			userID:        primitive.NewObjectID(),
+			storedUser:    domain.User{},
+			mockError:     fmt.Errorf("user not found"),
+			expectedError: true,
+		},
+		{
+			name:          "Database Error",
+			userID:        primitive.NewObjectID(),
+			storedUser:    domain.User{},
+			mockError:     fmt.Errorf("database error"),
+			expectedError: true,
+		},
 	}
 
-	// Hash the password before setting it in the mock repository
-	hashedPassword, err := infrastructure.HashPassword(user.Password)
-	suite.Require().NoError(err)
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// If we are not testing for error scenarios, hash the password
+			if !tc.expectedError {
+				hashedPassword, err := infrastructure.HashPassword(tc.expectedUser.Password)
+				suite.Require().NoError(err)
+				tc.storedUser.Password = hashedPassword
+			}
 
-	// Update the user object with the hashed password
-	storedUser := user
-	storedUser.Password = hashedPassword
+			// Mock the GetUserById method to return the user or error
+			suite.userRepo.On("GetUserById", tc.userID).Return(tc.storedUser, tc.mockError)
 
-	// Mock the GetUserById method to return the user with the hashed password
-	suite.userRepo.On("GetUserById", user.ID).Return(storedUser, nil)
+			// Call the GetUserById usecase method
+			result, err := suite.userUsecase.GetUserById(tc.userID)
 
-	// Call the GetUserById usecase method
-	result, err := suite.userUsecase.GetUserById(user.ID)
-	suite.Require().NoError(err)
+			if tc.expectedError {
+				suite.Error(err)
+			} else {
+				suite.Require().NoError(err)
+				suite.Equal(tc.storedUser.ID, result.ID)
+				suite.Equal(tc.storedUser.Username, result.Username)
+				suite.Equal(tc.storedUser.Role, result.Role)
 
-	// Compare the provided password with the hashed password stored in the mock repository
-	err = infrastructure.ComparePasswords(result.Password, "12345678")
+				// Compare the provided password with the hashed password stored in the mock repository
+				err = infrastructure.ComparePasswords(result.Password, tc.expectedUser.Password)
+				suite.Require().NoError(err)
+			}
 
-	// Verify the test results
-	suite.Require().NoError(err)
-
-	suite.userRepo.AssertExpectations(suite.T())
-
+			suite.userRepo.AssertExpectations(suite.T())
+		})
+	}
 }
-
 
 func (suite *UserUsecaseSuite) TestUpdateUser() {
 	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username : "tester1",
-		Password : "12345678",
-		Role : "user",
+		Username: "tester1",
+		Password: "12345678",
+		Role:     "user",
 	}
 
 	// Hash the password before setting it in the mock repository
-	hashedPassword, err := infrastructure.HashPassword(user.Password)
-	suite.Require().NoError(err)
+	// hashedPassword, err := infrastructure.HashPassword(user.Password)
+	// suite.Require().NoError(err)
 
-	// Update the user object with the hashed password
-	storedUser := user
-	storedUser.Password = hashedPassword
+	// // Update the user object with the hashed password
+	// storedUser := user
+	// storedUser.Password = hashedPassword
 
 	// Mock the UpdateUser method to return the user with the hashed password
-	suite.userRepo.On("UpdateUser", user.ID, user).Return(nil)
+	// suite.userRepo.On("UpdateUser", user.ID, user).Return(nil)
+	suite.userRepo.On("UpdateUser", user.ID, user).Return(nil).
+		Run(func(args mock.Arguments) {
+			password := args.Get(1).(string)
+			log.Print(password)
+			err := infrastructure.ComparePasswords(password, user.Password)
+			suite.NoError(err)
+			user.Password = password
+		})
 
 	// Call the UpdateUser usecase method
 
-	err = suite.userUsecase.UpdateUser(user.ID, user)
+	err := suite.userUsecase.UpdateUser(user.ID, user)
 	// Verify the test results
 	suite.Require().NoError(err)
 
@@ -188,25 +269,63 @@ func (suite *UserUsecaseSuite) TestUpdateUser() {
 }
 
 func (suite *UserUsecaseSuite) TestDeleteUser() {
-	// Setup the test case
 	user := domain.User{
 		ID:       primitive.NewObjectID(),
-		Username : "tester1",
-		Password : "12345678",
-		Role : "user",
+		Username: "tester1",
+		Password: "12345678",
+		Role:     "user",
 	}
 
-	// Mock the DeleteUser method to return the user with the hashed password
-	suite.userRepo.On("DeleteUser", user.ID).Return(nil)
+	rootUser, _ := primitive.ObjectIDFromHex("66bb0cfa397c997e09b4afb8")
+	testCases := []struct {
+		name          string
+		userID        primitive.ObjectID
+		mockReturnErr error
+		expectedError bool
+		expectedMsg   string
+	}{
+		{
+			name:          "Valid delete",
+			userID:        user.ID,
+			mockReturnErr: nil,
+			expectedError: false,
+		},
+		{
+			name:          "Delete non-existent user",
+			userID:        primitive.NewObjectID(),
+			mockReturnErr: fmt.Errorf("user not found"),
+			expectedError: true,
+			expectedMsg:   "user not found",
+		},
+		{
+			name:          "Delete root user",
+			userID:        rootUser,
+			mockReturnErr: fmt.Errorf("cannot delete root user"),
+			expectedError: true,
+			expectedMsg:   "cannot delete root user",
+		},
+	}
 
-	// Call the DeleteUser usecase method
-	err := suite.userUsecase.DeleteUser(user.ID)
+	// Iterate over the test cases
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			// Mock the DeleteUser method to return the error if expected
+			suite.userRepo.On("DeleteUser", tc.userID).Return(tc.mockReturnErr)
 
-	// Verify the test results
-	suite.Require().NoError(err)
+			// Call the DeleteUser usecase method
+			err := suite.userUsecase.DeleteUser(tc.userID)
 
-	suite.userRepo.AssertExpectations(suite.T())
+			// Verify the test results
+			if tc.expectedError {
+				suite.Error(err)
+				suite.EqualError(err, tc.expectedMsg)
+			} else {
+				suite.NoError(err)
+			}
 
+			suite.userRepo.AssertExpectations(suite.T())
+		})
+	}
 }
 
 // TearDownTest clears resources after each test
@@ -214,7 +333,6 @@ func (suite *UserUsecaseSuite) TearDownTest() {
 	// Reset the mock expectations
 	suite.userRepo.AssertExpectations(suite.T())
 }
-
 
 // Run the test suite
 func TestUserUsecaseSuite(t *testing.T) {

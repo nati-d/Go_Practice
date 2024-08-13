@@ -202,7 +202,6 @@ func (suite *TaskControllerSuite) TestDeleteTask() {
 	responseBody := domain.Response{}
 	json.NewDecoder(response.Body).Decode(&responseBody)
 
-	// You can add further assertions here if needed
 }
 
 func TestTaskControllerSuite(t *testing.T) {
